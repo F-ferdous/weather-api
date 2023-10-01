@@ -85,7 +85,7 @@ app.post("/pay-now", async (req, res) => {
   app.post("/payment/success/:transId", async (req, res) => {
     console.log(req.params.transId);
     res.redirect(
-      `https://weatherdemo.idatahost.com/payment/success/${req.params.transId}`
+      `https://dataportal.bmd.gov.bd/payment/success/${req.params.transId}`
     );
   });
 });
