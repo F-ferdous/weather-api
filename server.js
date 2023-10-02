@@ -4,8 +4,8 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 const cors = require("cors");
 const app = express();
 
-const store_id = "bmdda6515cfed53a80";
-const store_passwd = "bmdda6515cfed53a80@ssl";
+const store_id = "bmddataportal001live";
+const store_passwd = "bmddataportal001live22420";
 const is_live = false; //true for live, false for sandbox
 
 app.use(express.json());
@@ -48,7 +48,7 @@ app.post("/pay-now", async (req, res) => {
     total_amount: dataBody.totalAmount,
     currency: "BDT",
     tran_id: trans_id, // use unique tran_id for each api call
-    success_url: `https://weatherdemo.idatahost.com/payment/success/${trans_id}`,
+    success_url: `http://localhost:3000/payment/success/${trans_id}`,
     fail_url: "https://weatherdemo.idatahost.com/fail",
     cancel_url: "https://weatherdemo.idatahost.com/cancel",
     ipn_url: "http://localhost:3030/ipn",
@@ -84,9 +84,7 @@ app.post("/pay-now", async (req, res) => {
 
   app.post("/payment/success/:transId", async (req, res) => {
     console.log(req.params.transId);
-    res.redirect(
-      `https://dataportal.bmd.gov.bd/payment/success/${req.params.transId}`
-    );
+    res.redirect(`http://localhost:3000/payment/success/${req.params.transId}`);
   });
 });
 
