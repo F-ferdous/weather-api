@@ -4,8 +4,10 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 const cors = require("cors");
 const app = express();
 
-const store_id = "bmddataportal001live";
-const store_passwd = "bmddataportal001live22420";
+/* const store_id = "bmddataportal001live";
+const store_passwd = "bmddataportal001live22420"; */
+const store_id = "bmdda6515cfed53a80";
+const store_passwd = "bmdda6515cfed53a80@ssl";
 const is_live = false; //true for live, false for sandbox
 
 app.use(express.json());
@@ -78,8 +80,8 @@ app.post("/pay-now", async (req, res) => {
   sslcz.init(data).then((apiResponse) => {
     // Redirect the user to payment gateway
     let GatewayPageURL = apiResponse.GatewayPageURL;
-    res.send({ url: GatewayPageURL });
     console.log("Redirecting to: ", GatewayPageURL);
+    res.send({ url: GatewayPageURL });
   });
 
   app.post("/payment/success/:transId", async (req, res) => {
