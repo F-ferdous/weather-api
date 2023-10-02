@@ -4,19 +4,21 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 const cors = require("cors");
 const app = express();
 
-/* const store_id = "bmddataportal001live";
-const store_passwd = "bmddataportal001live22420"; */
-const store_id = "bmdda6515cfed53a80";
-const store_passwd = "bmdda6515cfed53a80@ssl";
-const is_live = false; //true for live, false for sandbox
+const store_id = "bmddataportal001live";
+const store_passwd = "bmddataportal001live22420";
+/* const store_id = "bmdda6515cfed53a80";
+const store_passwd = "bmdda6515cfed53a80@ssl"; */
+const is_live = true; //true for live, false for sandbox
 
 app.use(express.json());
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "fahimferdous119@gmail.com", // Your Gmail email
-    pass: "fdlm sgdy aelz giru", // Your Gmail password or an app password
+    user: "dataportalbmd@gmail.com",
+    pass: "aylc drtg nchn cmmx",
+    /*  user: "fahimferdous119@gmail.com", // Your Gmail email dataportalbmd@gmail.com
+    pass: "fdlm sgdy aelz giru", // Your Gmail password or an app password */
   },
 });
 
@@ -26,7 +28,7 @@ app.post("/send-email", (req, res) => {
   const { toEmail, subject, html } = req.body;
 
   const mailOptions = {
-    from: "BMD Portal <climate1971@gmail.com>",
+    from: "BMD Portal <dataportalbmd@gmail.com>",
     to: toEmail,
     subject: subject,
     html: html,
@@ -50,7 +52,7 @@ app.post("/pay-now", async (req, res) => {
     total_amount: dataBody.totalAmount,
     currency: "BDT",
     tran_id: trans_id, // use unique tran_id for each api call
-    success_url: `weatherdemo.idatahost.com/payment/success/${trans_id}`,
+    success_url: `https://dataportal.bmd.gov.bd/payment/success/${trans_id}`,
     fail_url: "https://weatherdemo.idatahost.com/fail",
     cancel_url: "https://weatherdemo.idatahost.com/cancel",
     ipn_url: "http://localhost:3030/ipn",
@@ -87,7 +89,7 @@ app.post("/pay-now", async (req, res) => {
   app.post("/payment/success/:transId", async (req, res) => {
     console.log(req.params.transId);
     res.redirect(
-      `weatherdemo.idatahost.com/payment/success/${req.params.transId}`
+      `https://dataportal.bmd.gov.bd/payment/success/${req.params.transId}`
     );
   });
 });
