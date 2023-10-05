@@ -7,12 +7,6 @@ const app = express();
 const { initializeApp } = require("firebase/app");
 const { getFirestore, updateDoc, doc } = require("firebase/firestore");
 
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
-
-// Get a reference to the Firestore instance
-const db = getFirestore();
-
 const firebaseConfig = {
   apiKey: "AIzaSyA0fFwse6dm4qjwxVHHPvVpV0GqfBfCpLI",
   authDomain: "bmdweather-78743.firebaseapp.com",
@@ -21,6 +15,11 @@ const firebaseConfig = {
   messagingSenderId: "120421292150",
   appId: "1:120421292150:web:81564924a7a64e5e8be757",
 };
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Get a reference to the Firestore instance
+const db = getFirestore();
 
 const store_id = "bmddataportal001live";
 const store_passwd = "bmddataportal001live22420";
