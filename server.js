@@ -4,6 +4,24 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 const cors = require("cors");
 const app = express();
 
+const { initializeApp } = require("firebase/app");
+const { getFirestore, updateDoc, doc } = require("firebase/firestore");
+
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Get a reference to the Firestore instance
+const db = getFirestore();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA0fFwse6dm4qjwxVHHPvVpV0GqfBfCpLI",
+  authDomain: "bmdweather-78743.firebaseapp.com",
+  projectId: "bmdweather-78743",
+  storageBucket: "bmdweather-78743.appspot.com",
+  messagingSenderId: "120421292150",
+  appId: "1:120421292150:web:81564924a7a64e5e8be757",
+};
+
 const store_id = "bmddataportal001live";
 const store_passwd = "bmddataportal001live22420";
 /* const store_id = "bmdda6515cfed53a80";
@@ -87,10 +105,25 @@ app.post("/pay-now", async (req, res) => {
   });
 
   app.post("/payment/success/:transId", async (req, res) => {
-    console.log(req.params.transId);
-    res.redirect(
-      `https://dataportal.bmd.gov.bd/payment/success/${req.params.transId}`
-    );
+    const transId = req.params.transId;
+
+    // Reference to the Firestore document you want to update
+    const docRef = doc(db, "FormData", transId);
+
+    try {
+      // Update the document with your desired data
+      await updateDoc(docRef, {
+        // Update the fields as needed
+        isPaid: true,
+      });
+
+      // Redirect the user to a success page
+      res.redirect(`https://dataportal.bmd.gov.bd`);
+    } catch (error) {
+      // Handle errors (e.g., document not found)
+      console.error("Error updating Firestore document:", error);
+      // Redirect the user to an error page
+    }
   });
 });
 
