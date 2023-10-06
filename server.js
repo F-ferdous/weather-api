@@ -21,11 +21,11 @@ const firebaseApp = initializeApp(firebaseConfig);
 // Get a reference to the Firestore instance
 const db = getFirestore();
 
-/* const store_id = "bmddataportal001live";
-const store_passwd = "bmddataportal001live22420"; */
-const store_id = "bmdda6515cfed53a80";
-const store_passwd = "bmdda6515cfed53a80@ssl";
-const is_live = false; //true for live, false for sandbox
+const store_id = "bmddataportal001live";
+const store_passwd = "bmddataportal001live22420";
+/* const store_id = "bmdda6515cfed53a80";
+const store_passwd = "bmdda6515cfed53a80@ssl"; */
+const is_live = true; //true for live, false for sandbox
 
 app.use(express.json());
 
@@ -153,7 +153,7 @@ app.post("/pay-now", async (req, res) => {
 
         const mailOptions2 = {
           from: "BMD Portal <dataportalbmd@gmail.com>",
-          to: "fahimferdous119@gmail.com",
+          to: "climate1971@gmail.com",
           subject: `Payment Confirmation - ${userName}`,
           html: emailHTML1,
         };
