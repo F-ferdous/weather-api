@@ -69,7 +69,7 @@ app.post("/pay-now", async (req, res) => {
     total_amount: dataBody.totalAmount,
     currency: "BDT",
     tran_id: trans_id, // use unique tran_id for each api call
-    success_url: `https://dataportal.bmd.gov.bd/`,
+    success_url: `https://dataportal.bmd.gov.bd/payment/success`,
     fail_url: "https://weatherdemo.idatahost.com/fail",
     cancel_url: "https://weatherdemo.idatahost.com/cancel",
     ipn_url: "http://localhost:3030/ipn",
