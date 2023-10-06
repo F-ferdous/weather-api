@@ -5,7 +5,7 @@ const cors = require("cors");
 const app = express();
 
 const { initializeApp } = require("firebase/app");
-const { getFirestore, updateDoc, doc } = require("firebase/firestore");
+const { getFirestore, updateDoc, doc, getDoc } = require("firebase/firestore");
 
 const firebaseConfig = {
   apiKey: "AIzaSyA0fFwse6dm4qjwxVHHPvVpV0GqfBfCpLI",
@@ -72,9 +72,9 @@ app.post("/pay-now", async (req, res) => {
     total_amount: dataBody.totalAmount,
     currency: "BDT",
     tran_id: trans_id, // use unique tran_id for each api call
-    success_url: `/payment/success`,
-    fail_url: "https://weatherdemo.idatahost.com/fail",
-    cancel_url: "https://weatherdemo.idatahost.com/cancel",
+    success_url: `https://weatherbmd-api.onrender.com/payment/success/${trans_id}`,
+    fail_url: `https://weatherbmd-api.onrender.com/payment/cancel/${trans_id}`,
+    cancel_url: `https://weatherbmd-api.onrender.com/payment/cancel/${trans_id}`,
     ipn_url: "http://localhost:3030/ipn",
     shipping_method: "Courier",
     product_name: "Weather Data",
@@ -105,28 +105,22 @@ app.post("/pay-now", async (req, res) => {
     console.log("Redirecting to: ", GatewayPageURL);
     res.send({ url: GatewayPageURL });
   });
-});
 
-app.post("/payment/success/", async (req, res) => {
-  //const transId = req.params.transId;
-  console.log("success called");
-  // Reference to the Firestore document you want to update
-  const docRef = doc(db, "FormData", trans_id);
-
-  try {
-    const docSnapshot = await getDoc(docRef);
-    if (docSnapshot.exists()) {
-      const userEmail = docSnapshot.data().Email; // Assuming the field name is "email"
-      const userName = docSnapshot.data().Name;
-      const tA = docSnapshot.data().totalAmount;
-
-      // Update the document with your desired data
-      await updateDoc(docRef, {
-        // Update the fields as needed
-        isPaid: true,
-      });
-
-      const emailHTML1 = `
+  app.post("/payment/success/:transId", async (req, res) => {
+    console.log(req.params.transId);
+    const docRef = doc(db, "FormData", trans_id);
+    try {
+      const docSnapshot = await getDoc(docRef);
+      if (docSnapshot.exists()) {
+        //console.log(docSnapshot.data());
+        const userEmail = docSnapshot.data().Email; // Assuming the field name is "email"
+        const userName = docSnapshot.data().Name;
+        const tA = docSnapshot.data().totalAmount;
+        await updateDoc(docRef, {
+          // Update the fields as needed
+          isPaid: true,
+        });
+        const emailHTML1 = `
         <html>
           <head>
             <style>
@@ -150,48 +144,50 @@ app.post("/payment/success/", async (req, res) => {
         </html>
       `;
 
-      const mailOptions = {
-        from: "BMD Portal <dataportalbmd@gmail.com>",
-        to: userEmail,
-        subject: `Payment Confirmation - ${userName}`,
-        html: emailHTML1,
-      };
+        const mailOptions = {
+          from: "BMD Portal <dataportalbmd@gmail.com>",
+          to: userEmail,
+          subject: `Payment Confirmation - ${userName}`,
+          html: emailHTML1,
+        };
 
-      const mailOptions2 = {
-        from: "BMD Portal <dataportalbmd@gmail.com>",
-        to: "fahimferdous119@gmail.com",
-        subject: `Payment Confirmation - ${userName}`,
-        html: emailHTML1,
-      };
+        const mailOptions2 = {
+          from: "BMD Portal <dataportalbmd@gmail.com>",
+          to: "fahimferdous119@gmail.com",
+          subject: `Payment Confirmation - ${userName}`,
+          html: emailHTML1,
+        };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error(error);
-          res.status(500).send("Error sending email");
-        } else {
-          console.log("Email sent to user ");
-          res.status(200).send("Email sent successfully");
-        }
-      });
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send("Error sending email");
+          } else {
+            console.log("Email sent to user ");
+            res.status(200).send("Email sent successfully");
+          }
+        });
 
-      transporter.sendMail(mailOptions2, (error, info) => {
-        if (error) {
-          console.error(error);
-          res.status(500).send("Error sending email");
-        } else {
-          console.log("Email sent to admin ");
-          res.status(200).send("Email sent successfully");
-        }
-      });
+        transporter.sendMail(mailOptions2, (error, info) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send("Error sending email");
+          } else {
+            console.log("Email sent to admin ");
+            res.status(200).send("Email sent successfully");
+          }
+        });
 
-      // Redirect the user to a success page
-      // res.redirect(`https://dataportal.bmd.gov.bd`);
+        res.redirect("https://dataportal.bmd.gov.bd/payment/success");
+      }
+    } catch (e) {
+      console.log(e);
     }
-  } catch (error) {
-    // Handle errors (e.g., document not found)
-    console.error("Error updating Firestore document:", error);
-    // Redirect the user to an error page
-  }
+  });
+
+  app.post("/payment/cancel/:transId", async (req, res) => {
+    res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
+  });
 });
 
 const PORT = process.env.PORT || 5000;
