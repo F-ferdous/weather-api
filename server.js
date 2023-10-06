@@ -21,11 +21,11 @@ const firebaseApp = initializeApp(firebaseConfig);
 // Get a reference to the Firestore instance
 const db = getFirestore();
 
-const store_id = "bmddataportal001live";
-const store_passwd = "bmddataportal001live22420";
-/* const store_id = "bmdda6515cfed53a80";
-const store_passwd = "bmdda6515cfed53a80@ssl"; */
-const is_live = true; //true for live, false for sandbox
+/* const store_id = "bmddataportal001live";
+const store_passwd = "bmddataportal001live22420"; */
+const store_id = "bmdda6515cfed53a80";
+const store_passwd = "bmdda6515cfed53a80@ssl";
+const is_live = false; //true for live, false for sandbox
 
 app.use(express.json());
 
@@ -110,14 +110,79 @@ app.post("/pay-now", async (req, res) => {
     const docRef = doc(db, "FormData", transId);
 
     try {
-      // Update the document with your desired data
-      await updateDoc(docRef, {
-        // Update the fields as needed
-        isPaid: true,
-      });
+      const docSnapshot = await getDoc(docRef);
+      if (docSnapshot.exists()) {
+        const userEmail = docSnapshot.data().Email; // Assuming the field name is "email"
+        const userName = docSnapshot.data().Name;
+        const tA = docSnapshot.data().totalAmount;
 
-      // Redirect the user to a success page
-      res.redirect(`https://dataportal.bmd.gov.bd`);
+        // Update the document with your desired data
+        await updateDoc(docRef, {
+          // Update the fields as needed
+          isPaid: true,
+        });
+
+        const emailHTML1 = `
+          <html>
+            <head>
+              <style>
+                /* Add your CSS styles here */
+              </style>
+            </head>
+            <body>
+              <div>
+                <h3>BMD Data Portal</h3>
+                <p><b>Payment Confirmation</b></p>
+                <hr />
+                <h5>Name: ${userName}</h5>
+                <h5>Email: ${userEmail}</h5>
+                <h5>Total Amount: ${tA}</h5>
+                <h5>Payment Status: <span color="green">Paid</span></h5>
+                <hr/>
+                <p>Thank you for being with us</p>
+                
+              </div>
+            </body>
+          </html>
+        `;
+
+        const mailOptions = {
+          from: "BMD Portal <dataportalbmd@gmail.com>",
+          to: userEmail,
+          subject: `Payment Confirmation - ${userName}`,
+          html: emailHTML1,
+        };
+
+        const mailOptions2 = {
+          from: "BMD Portal <dataportalbmd@gmail.com>",
+          to: "fahimferdous119@gmail.com",
+          subject: `Payment Confirmation - ${userName}`,
+          html: emailHTML1,
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send("Error sending email");
+          } else {
+            console.log("Email sent to user ");
+            res.status(200).send("Email sent successfully");
+          }
+        });
+
+        transporter.sendMail(mailOptions2, (error, info) => {
+          if (error) {
+            console.error(error);
+            res.status(500).send("Error sending email");
+          } else {
+            console.log("Email sent to admin ");
+            res.status(200).send("Email sent successfully");
+          }
+        });
+
+        // Redirect the user to a success page
+        res.redirect(`https://dataportal.bmd.gov.bd`);
+      }
     } catch (error) {
       // Handle errors (e.g., document not found)
       console.error("Error updating Firestore document:", error);
