@@ -103,11 +103,11 @@ app.post("/pay-now", async (req, res) => {
     res.send({ url: GatewayPageURL });
   });
 
-  app.post("/payment/success/:transId", async (req, res) => {
-    const transId = req.params.transId;
+  app.post("/payment/success/", async (req, res) => {
+    //const transId = req.params.transId;
 
     // Reference to the Firestore document you want to update
-    const docRef = doc(db, "FormData", transId);
+    const docRef = doc(db, "FormData", trans_id);
 
     try {
       const docSnapshot = await getDoc(docRef);
