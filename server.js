@@ -153,7 +153,7 @@ app.post("/pay-now", async (req, res) => {
 
         const mailOptions2 = {
           from: "BMD Portal <dataportalbmd@gmail.com>",
-          to: "climate1971@gmail.com",
+          to: "bmdclimate24@gmail.com",
           subject: `Payment Confirmation - ${userName}`,
           html: emailHTML1,
         };
