@@ -75,7 +75,7 @@ app.post("/pay-now", async (req, res) => {
     success_url: `https://weatherbmd-api.onrender.com/payment/success/${trans_id}`,
     fail_url: `https://weatherbmd-api.onrender.com/payment/cancel/${trans_id}`,
     cancel_url: `https://weatherbmd-api.onrender.com/payment/cancel/${trans_id}`,
-    ipn_url: "http://localhost:3030/ipn",
+    ipn_url: "https://weatherbmd-api.onrender.com/ipn",
     shipping_method: "Courier",
     product_name: "Weather Data",
     product_category: "Weather Data",
@@ -154,7 +154,7 @@ app.post("/pay-now", async (req, res) => {
         const mailOptions2 = {
           from: "BMD Portal <dataportalbmd@gmail.com>",
           //to: "bmdclimate24@gmail.com",
-          to: "dataportalbmd@gmail.com",
+          to: "bmddataportal@gmail.com",
           subject: `Payment Confirmation - ${userName}`,
           html: emailHTML1,
         };
