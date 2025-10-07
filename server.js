@@ -9,6 +9,14 @@ const { getFirestore, updateDoc, doc, getDoc } = require("firebase/firestore");
 const SSLCommerzPayment = require("sslcommerz-lts");
  */
 
+import { fetch, Headers, Request, Response } from "undici";
+
+// Polyfill global fetch + Headers for Resend
+globalThis.fetch = fetch;
+globalThis.Headers = Headers;
+globalThis.Request = Request;
+globalThis.Response = Response;
+
 import express from "express";
 import cors from "cors";
 import { Resend } from "resend";
