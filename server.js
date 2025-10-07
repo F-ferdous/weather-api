@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
@@ -14,7 +17,7 @@ app.use(cors());
 // 🔥 FIREBASE CONFIG
 // =======================
 const firebaseConfig = {
-  apiKey: "AIzaSyA0fFwse6dm4qjwxVHHPvVpV0GqfBfCpLI",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "bmdweather-78743.firebaseapp.com",
   projectId: "bmdweather-78743",
   storageBucket: "bmdweather-78743.appspot.com",
@@ -28,19 +31,17 @@ const db = getFirestore(firebaseApp);
 // =======================
 // 💳 SSLCommerz CONFIG
 // =======================
-const store_id = "bmddataportal001live";
-const store_passwd = "bmddataportal001live22420";
+const store_id = process.env.STORE_ID;
+const store_passwd = process.env.STORE_PASS;
 const is_live = true;
 
 // =======================
 // ✉️ GMAIL API MAILER
 // =======================
-const CLIENT_ID =
-  "953366315663-u02hcd9ok8n0n2caocq6her4nlaqq7vf.apps.googleusercontent.com";
-const CLIENT_SECRET = "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";
-const REFRESH_TOKEN =
-  "1//04_5PWFJx591wCgYIARAAGAQSNwF-L9IrBv8hLjm5YV0Pha4F-4yR6ZEEjm6SpLYSdGwWfDNMh5DHI-FVPOZlCFE8U8YxOhBrv2U";
-const USER_EMAIL = "dataportalbmd@gmail.com";
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+const USER_EMAIL = process.env.USER_EMAIL;
 
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,
