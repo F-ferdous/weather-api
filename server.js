@@ -1,3 +1,6 @@
+const { Headers } = require("node-fetch");
+global.Headers = Headers;
+
 const express = require("express");
 const cors = require("cors");
 const { Resend } = require("resend");
