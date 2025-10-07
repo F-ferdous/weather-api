@@ -12,7 +12,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^10.4.0",
-    "googleapis": "^144.0.0",
+    "resend": "^6.1.2",
     "nodemailer": "^6.9.5",
     "sslcommerz-lts": "^1.1.0"
   },

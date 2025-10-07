@@ -1,21 +1,37 @@
+// ==========================
+// 🌐 POLYFILL HEADERS FOR NODE 20+
+// ==========================
 import dotenv from "dotenv";
 dotenv.config();
+if (typeof globalThis.Headers === "undefined") {
+  globalThis.Headers = class Headers extends Map {
+    constructor(init) {
+      super(Object.entries(init || {}));
+    }
+  };
+}
 
+// ==========================
+// IMPORTS
+// ==========================
 import express from "express";
 import cors from "cors";
-import nodemailer from "nodemailer";
-import { google } from "googleapis";
+import { Resend } from "resend";
 import { initializeApp } from "firebase/app";
 import { getFirestore, updateDoc, doc, getDoc } from "firebase/firestore";
 import SSLCommerzPayment from "sslcommerz-lts";
 
+// ==========================
+// CONFIG
+// ==========================
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// =======================
-// 🔥 FIREBASE CONFIG
-// =======================
+// Resend API
+const resend = new Resend(process.env.RESEND_API);
+
+// Firebase config
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "bmdweather-78743.firebaseapp.com",
@@ -24,80 +40,47 @@ const firebaseConfig = {
   messagingSenderId: "120421292150",
   appId: "1:120421292150:web:81564924a7a64e5e8be757",
 };
-
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
-// =======================
-// 💳 SSLCommerz CONFIG
-// =======================
+// SSLCommerz config
 const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
 const is_live = true;
 
-// =======================
-// ✉️ GMAIL API MAILER
-// =======================
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const USER_EMAIL = process.env.USER_EMAIL;
-
-const oAuth2Client = new google.auth.OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET,
-  "https://developers.google.com/oauthplayground"
-);
-oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-
+// ==========================
+// SEND EMAIL FUNCTION
+// ==========================
 async function sendEmail({ to, subject, html }) {
   try {
-    const accessToken = await oAuth2Client.getAccessToken();
-
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: USER_EMAIL,
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET,
-        refreshToken: REFRESH_TOKEN,
-        accessToken: accessToken.token,
-      },
-    });
-
-    const mailOptions = {
-      from: `BMD Portal <${USER_EMAIL}>`,
+    await resend.emails.send({
+      from: "BMD Portal <noreply@fahimferdous.com>",
       to,
       subject,
       html,
-    };
-
-    const result = await transport.sendMail(mailOptions);
+    });
     console.log(`✅ Email sent to ${to}`);
-    return result;
+    return { ok: true };
   } catch (error) {
     console.error("❌ Email send failed:", error);
-    throw error;
+    return { ok: false, error };
   }
 }
 
-// =======================
-// 📩 ROUTES
-// =======================
+// ==========================
+// ROUTES
+// ==========================
+
+// Test email
 app.post("/send-email", async (req, res) => {
   const { toEmail, subject, html } = req.body;
-  try {
-    await sendEmail({ to: toEmail, subject, html });
-    res.status(200).send("Email sent successfully!");
-  } catch {
-    res.status(500).send("Failed to send email.");
-  }
+  const result = await sendEmail({ to: toEmail, subject, html });
+  if (result.ok) return res.status(200).send("Email sent successfully");
+  return res.status(500).send("Error sending email");
 });
 
-// Payment routes
-let dataBody;
-let trans_id;
+// Pay now
+let dataBody, trans_id;
 
 app.post("/pay-now", async (req, res) => {
   dataBody = req.body.data;
@@ -125,6 +108,13 @@ app.post("/pay-now", async (req, res) => {
     cus_country: "Bangladesh",
     cus_phone: dataBody.Phone,
     cus_fax: "01711111111",
+    ship_name: "Customer Name",
+    ship_add1: "Dhaka",
+    ship_add2: "Dhaka",
+    ship_city: "Dhaka",
+    ship_state: "Dhaka",
+    ship_postcode: 1000,
+    ship_country: "Bangladesh",
   };
 
   const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
@@ -135,15 +125,19 @@ app.post("/pay-now", async (req, res) => {
   });
 });
 
+// Payment success
 app.post("/payment/success/:transId", async (req, res) => {
   const currentTransId = req.params.transId;
   const docRef = doc(db, "FormData", currentTransId);
 
   try {
     const docSnapshot = await getDoc(docRef);
-    if (docSnapshot.exists()) {
-      const userData = docSnapshot.data();
-      const emailHTML = `
+    if (!docSnapshot.exists()) {
+      return res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
+    }
+
+    const userData = docSnapshot.data();
+    const emailHTML = `
         <html>
           <body>
             <div>
@@ -161,36 +155,35 @@ app.post("/payment/success/:transId", async (req, res) => {
         </html>
       `;
 
-      await updateDoc(docRef, { isPaid: true });
+    await updateDoc(docRef, { isPaid: true });
 
-      await Promise.all([
-        sendEmail({
-          to: userData.Email,
-          subject: `Payment Confirmation - ${userData.Name}`,
-          html: emailHTML,
-        }),
-        sendEmail({
-          to: "bmddataportal@gmail.com",
-          subject: `Payment Confirmation - ${userData.Name}`,
-          html: emailHTML,
-        }),
-      ]);
+    await Promise.all([
+      sendEmail({
+        to: userData.Email,
+        subject: `Payment Confirmation - ${userData.Name}`,
+        html: emailHTML,
+      }),
+      sendEmail({
+        to: "bmddataportal@gmail.com",
+        subject: `Payment Confirmation - ${userData.Name}`,
+        html: emailHTML,
+      }),
+    ]);
 
-      return res.redirect("https://dataportal.bmd.gov.bd/payment/success");
-    }
-    return res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
+    return res.redirect("https://dataportal.bmd.gov.bd/payment/success");
   } catch (error) {
     console.error(error);
     return res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
   }
 });
 
+// Payment cancel
 app.post("/payment/cancel/:transId", async (req, res) => {
   res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
 });
 
-// =======================
-// 🚀 START SERVER
-// =======================
+// ==========================
+// START SERVER
+// ==========================
 const PORT = process.env.PORT || 5002;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server started on port ${PORT}...`));
