@@ -1,9 +1,9 @@
-import express from "express";
-import cors from "cors";
-import { Resend } from "resend";
-import { initializeApp } from "firebase/app";
-import { getFirestore, updateDoc, doc, getDoc } from "firebase/firestore";
-import SSLCommerzPayment from "sslcommerz-lts";
+const express = require("express");
+const cors = require("cors");
+const { Resend } = require("resend");
+const { initializeApp } = require("firebase/app");
+const { getFirestore, updateDoc, doc, getDoc } = require("firebase/firestore");
+const SSLCommerzPayment = require("sslcommerz-lts");
 
 // ==========================
 // 🔧 CONFIG
@@ -181,5 +181,5 @@ app.post("/payment/cancel/:transId", async (req, res) => {
 // ==========================
 // 🚀 START SERVER
 // ==========================
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => console.log(`✅ Server started on port ${PORT}...`));
