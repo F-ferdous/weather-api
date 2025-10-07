@@ -1,4 +1,4 @@
-const { Headers } = require("node-fetch");
+/* const { Headers } = require("node-fetch");
 global.Headers = Headers;
 
 const express = require("express");
@@ -7,6 +7,14 @@ const { Resend } = require("resend");
 const { initializeApp } = require("firebase/app");
 const { getFirestore, updateDoc, doc, getDoc } = require("firebase/firestore");
 const SSLCommerzPayment = require("sslcommerz-lts");
+ */
+
+import express from "express";
+import cors from "cors";
+import { Resend } from "resend";
+import { initializeApp } from "firebase/app";
+import { getFirestore, updateDoc, doc, getDoc } from "firebase/firestore";
+import SSLCommerzPayment from "sslcommerz-lts";
 
 // ==========================
 // 🔧 CONFIG
