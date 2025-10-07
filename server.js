@@ -38,7 +38,7 @@ const {
   GMAIL_USER = "dataportalbmd@gmail.com",
   GMAIL_PASS = "kbin qbhn gynp fhyg",
   SMTP_HOST = "smtp.gmail.com",
-  SMTP_PORT = 587,
+  SMTP_PORT = 465,
 } = process.env;
 
 if (SENDGRID_API_KEY) {
