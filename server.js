@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const cors = require("cors");
 const app = express();
+const sgMail = require("@sendgrid/mail");
 
 const { initializeApp } = require("firebase/app");
 const { getFirestore, updateDoc, doc, getDoc } = require("firebase/firestore");
@@ -29,37 +30,61 @@ const is_live = true; //true for live, false for sandbox
 
 app.use(express.json());
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
+// Configure email providers
+const {
+  SENDGRID_API_KEY,
+  EMAIL_FROM = "BMD Portal <dataportalbmd@gmail.com>",
+  ADMIN_EMAIL = "bmddataportal@gmail.com",
+  GMAIL_USER = "dataportalbmd@gmail.com",
+  GMAIL_PASS = "kbin qbhn gynp fhyg",
+  SMTP_HOST = "smtp.gmail.com",
+  SMTP_PORT = 587,
+} = process.env;
+
+if (SENDGRID_API_KEY) {
+  sgMail.setApiKey(SENDGRID_API_KEY);
+}
+
+const smtpTransporter = nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: Number(SMTP_PORT),
+  secure: Number(SMTP_PORT) === 465, // true for 465, false for 587
   auth: {
-    user: "dataportalbmd@gmail.com",
-    pass: "aylc drtg nchn cmmx",
-    /*  user: "fahimferdous119@gmail.com", // Your Gmail email dataportalbmd@gmail.com
-    pass: "fdlm sgdy aelz giru", // Your Gmail password or an app password */
+    user: GMAIL_USER,
+    pass: GMAIL_PASS,
   },
+  connectionTimeout: 10_000, // 10s
+  greetingTimeout: 10_000,
+  socketTimeout: 20_000,
 });
+
+async function sendEmail({ to, subject, html }) {
+  try {
+    if (SENDGRID_API_KEY) {
+      await sgMail.send({
+        to,
+        from: EMAIL_FROM,
+        subject,
+        html,
+      });
+      return { ok: true };
+    }
+    // Fallback to SMTP
+    await smtpTransporter.sendMail({ from: EMAIL_FROM, to, subject, html });
+    return { ok: true };
+  } catch (err) {
+    console.error("Email send failed:", err);
+    return { ok: false, error: err };
+  }
+}
 
 app.use(cors());
 
-app.post("/send-email", (req, res) => {
+app.post("/send-email", async (req, res) => {
   const { toEmail, subject, html } = req.body;
-
-  const mailOptions = {
-    from: "BMD Portal <dataportalbmd@gmail.com>",
-    to: toEmail,
-    subject: subject,
-    html: html,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send("Error sending email");
-    } else {
-      console.log("Email sent: " + info.response);
-      res.status(200).send("Email sent successfully");
-    }
-  });
+  const result = await sendEmail({ to: toEmail, subject, html });
+  if (result.ok) return res.status(200).send("Email sent successfully");
+  return res.status(500).send("Error sending email");
 });
 
 let dataBody;
@@ -105,22 +130,21 @@ app.post("/pay-now", async (req, res) => {
     console.log("Redirecting to: ", GatewayPageURL);
     res.send({ url: GatewayPageURL });
   });
+});
 
-  app.post("/payment/success/:transId", async (req, res) => {
-    console.log(req.params.transId);
-    const docRef = doc(db, "FormData", trans_id);
-    try {
-      const docSnapshot = await getDoc(docRef);
-      if (docSnapshot.exists()) {
-        //console.log(docSnapshot.data());
-        const userEmail = docSnapshot.data().Email; // Assuming the field name is "email"
-        const userName = docSnapshot.data().Name;
-        const tA = docSnapshot.data().totalAmount;
-        await updateDoc(docRef, {
-          // Update the fields as needed
-          isPaid: true,
-        });
-        const emailHTML1 = `
+// Payment success callback (top-level route)
+app.post("/payment/success/:transId", async (req, res) => {
+  console.log(req.params.transId);
+  const currentTransId = req.params.transId;
+  const docRef = doc(db, "FormData", currentTransId);
+  try {
+    const docSnapshot = await getDoc(docRef);
+    if (docSnapshot.exists()) {
+      const userEmail = docSnapshot.data().Email;
+      const userName = docSnapshot.data().Name;
+      const tA = docSnapshot.data().totalAmount;
+      await updateDoc(docRef, { isPaid: true });
+      const emailHTML1 = `
         <html>
           <head>
             <style>
@@ -143,52 +167,30 @@ app.post("/pay-now", async (req, res) => {
           </body>
         </html>
       `;
-
-        const mailOptions = {
-          from: "BMD Portal <dataportalbmd@gmail.com>",
+      // Fire-and-forget emails; don't block redirect
+      await Promise.all([
+        sendEmail({
           to: userEmail,
           subject: `Payment Confirmation - ${userName}`,
           html: emailHTML1,
-        };
-
-        const mailOptions2 = {
-          from: "BMD Portal <dataportalbmd@gmail.com>",
-          //to: "bmdclimate24@gmail.com",
-          to: "bmddataportal@gmail.com",
+        }),
+        sendEmail({
+          to: ADMIN_EMAIL,
           subject: `Payment Confirmation - ${userName}`,
           html: emailHTML1,
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.error(error);
-            res.status(500).send("Error sending email");
-          } else {
-            console.log("Email sent to user ");
-            res.status(200).send("Email sent successfully");
-          }
-        });
-
-        transporter.sendMail(mailOptions2, (error, info) => {
-          if (error) {
-            console.error(error);
-            res.status(500).send("Error sending email");
-          } else {
-            console.log("Email sent to admin ");
-            res.status(200).send("Email sent successfully");
-          }
-        });
-
-        res.redirect("https://dataportal.bmd.gov.bd/payment/success");
-      }
-    } catch (e) {
-      console.log(e);
+        }),
+      ]);
+      return res.redirect("https://dataportal.bmd.gov.bd/payment/success");
     }
-  });
+    return res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
+  } catch (e) {
+    console.log(e);
+    return res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
+  }
+});
 
-  app.post("/payment/cancel/:transId", async (req, res) => {
-    res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
-  });
+app.post("/payment/cancel/:transId", async (req, res) => {
+  res.redirect("https://dataportal.bmd.gov.bd/payment/cancel");
 });
 
 const PORT = process.env.PORT || 5000;
